@@ -1,12 +1,19 @@
 {
-    "name": "@eziapp/builder",
+    "name": "@eziapp-org/builder",
     "version": "0.0.0",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/eziapp-org/builder.git"
+    },
     "main": "dist/index.js",
+    "types": "dist/main.d.ts",
     "files": [
         "dist/"
     ],
     "scripts": {
-        "build": "tsc --outDir dist main.ts"
+        "build": "tsc --outDir dist --declaration main.ts",
+        "prepublishOnly": "npm run build"
     },
     "devDependencies": {
         "typescript": "^5.9.3"
