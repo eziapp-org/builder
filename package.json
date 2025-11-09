@@ -7,15 +7,17 @@
         "url": "https://github.com/eziapp-org/builder.git"
     },
     "main": "dist/index.js",
-    "types": "dist/main.d.ts",
+    "types": "dist/index.d.ts",
     "files": [
         "dist/"
     ],
     "scripts": {
-        "build": "tsc --outDir dist --declaration main.ts",
+        "build": "tsc --outDir dist --declaration index.ts",
+        "pack": "npm run build && npm pack && shx mv *.tgz packed/builder-latest.tgz",
         "prepublishOnly": "npm run build"
     },
     "devDependencies": {
+        "shx": "^0.4.0",
         "typescript": "^5.9.3"
     }
 }
