@@ -38,7 +38,7 @@ export function getAllFiles(dir: string, baseDir: string = dir): string[] {
     return results;
 }
 
-export function getCurrentPlatformNam() {
+export function getCurrentPlatformName() {
     switch (process.platform) {
         case "win32":
             return "windows";

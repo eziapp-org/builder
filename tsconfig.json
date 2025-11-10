@@ -1,0 +1,31 @@
+{
+    "compilerOptions": {
+        "target": "ES2021", // 支持现代 JS 特性
+        "module": "CommonJS", // Node 默认模块系统
+        "moduleResolution": "Node", // 按 Node 方式解析模块
+        "lib": [
+            "ES2021"
+        ], // 只使用 Node 支持的标准库
+        "outDir": "dist", // 输出目录
+        "rootDir": ".", // 源码根目录（可选）
+        "strict": true, // 启用所有严格检查
+        "esModuleInterop": true, // 支持 CommonJS 导入
+        "resolveJsonModule": true, // 支持导入 JSON 文件
+        "declaration": true, // 生成类型声明（可选）
+        "types": [
+            "node"
+        ], // 加载 Node 类型定义
+        "skipLibCheck": true, // 跳过依赖库类型检查
+        "forceConsistentCasingInFileNames": true,
+        "allowSyntheticDefaultImports": true,
+        "allowJs": false,
+        "noEmit": false
+    },
+    "include": [
+        "index.ts"
+    ], // 只编译入口文件
+    "exclude": [
+        "node_modules",
+        "dist"
+    ] // 排除构建输出和依赖
+}

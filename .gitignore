@@ -3,3 +3,4 @@ build
 dist
 packed
 .vscode
+bin
