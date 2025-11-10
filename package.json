@@ -12,7 +12,7 @@
         "dist/"
     ],
     "bin": {
-        "eziapp-builder": "dist/index.js"
+        "ezi-builder": "dist/index.js"
     },
     "scripts": {
         "build": "tsc --outDir dist --declaration index.ts",
