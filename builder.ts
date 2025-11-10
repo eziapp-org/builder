@@ -5,6 +5,7 @@ import {
     getCurrentPlatformName,
     getCurrentTimeString
 } from "./utils/common";
+import * as fs from "fs";
 import * as path from "path";
 import { createServer } from "vite";
 
@@ -43,8 +44,30 @@ export class Builder {
         this.genTempFilePath = config.genTempFilePath || path.join(process.cwd(), "temp");
         this.LoadConfig();
     }
-    public LoadConfig() {
+    public async LoadConfig() {
+        // vite config
+        let viteConfig = {} as any;
+        try {
+            viteConfig = await import(path.join(process.cwd(), this.viteConfigPath));
+            if (viteConfig.default) {
+                viteConfig = viteConfig.default;
+            }
+        } catch (e) {
+            console.log(yellow("! no vite.config.ts found, using default config."));
+        }
+        this.viteConfig = viteConfig;
 
+        // ezi config
+        let eziConfig = {} as any;
+        try {
+            eziConfig = await import(path.join(process.cwd(), this.eziConfigPath));
+            if (eziConfig.default) {
+                eziConfig = eziConfig.default;
+            }
+        } catch (e) {
+            console.log(yellow("! no ezi.config.ts found, using default config."));
+        }
+        this.eziConfig = eziConfig;
     }
 
     public genAssets() {
@@ -60,10 +83,13 @@ export class Builder {
         const server = await createServer();
         await server.listen();
 
+        const eziConfigJsonPath = path.join(this.genTempFilePath, "ezi.config.json");
+        fs.writeFileSync(eziConfigJsonPath, JSON.stringify(this.eziConfig, null, 4), { encoding: "utf-8" });
+
         const appName = this.eziConfig?.application?.name || "EziApplication";
         const child = spawn(this.eziDevExePath, [
             '--configpath',
-            path.join(this.genTempFilePath, "ezi.config.json"),
+            eziConfigJsonPath,
         ], {
             cwd: __dirname,
             stdio: ["ignore", "pipe", "pipe"],
