@@ -24,5 +24,8 @@
         "shx": "^0.4.0",
         "typescript": "^5.9.3",
         "vite": "^7.2.2"
+    },
+    "dependencies": {
+        "@mongodb-js/zstd": "^7.0.0"
     }
 }

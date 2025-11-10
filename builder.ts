@@ -3,11 +3,13 @@ import { blue, bold, green, red, yellow } from "./colorf";
 import {
     getArg,
     getCurrentPlatformName,
-    getCurrentTimeString
+    getCurrentTimeString,
+    getAllFiles
 } from "./utils/common";
 import * as fs from "fs";
 import * as path from "path";
-import { createServer } from "vite";
+import { build, createServer } from "vite";
+import { compress } from '@mongodb-js/zstd'
 
 type BuildMode = 'debug' | 'release'
 type Platform = 'windows' | 'linux' | 'macos'
@@ -70,12 +72,73 @@ export class Builder {
         this.eziConfig = eziConfig;
     }
 
-    public genAssets() {
+    public async genAssets() {
+        const assetsMatas: {
+            [key: string]: {
+                offset: number;
+                size: number;
+            };
+        } = {};
+        const assetsBinarys: Buffer[] = [];
+        let offset = 0;
 
+        // 打包ezi配置文件
+        const configBuffer = await compress(Buffer.from(JSON.stringify(this.eziConfig), "utf-8"));
+        const configSize = configBuffer.length;
+        assetsMatas["ezi.config.manifest"] = { offset, size: configSize };
+        assetsBinarys.push(configBuffer);
+        offset += configSize;
+
+        // 打包splash图片
+        const splashPath = this.eziConfig?.window?.splashscreen?.src;
+        if (splashPath) {
+            const splashBuffer = await compress(fs.readFileSync(path.join(process.cwd(), splashPath)));
+            const splashSize = splashBuffer.length;
+            assetsMatas["ezi.splashscreen-" + splashPath] = { offset, size: splashSize };
+            assetsBinarys.push(splashBuffer);
+            offset += splashSize;
+        }
+
+        // 打包资源文件
+        const assetsDir = path.join(process.cwd(), this.viteConfig?.build?.outDir || "dist");
+        const files = getAllFiles(assetsDir);
+
+        for (const file of files) {
+            const filePath = path.join(assetsDir, file);
+            const stat = fs.statSync(filePath);
+            if (stat.isFile()) {
+                const packageName = this.eziConfig?.application?.package || "com.ezi.app";
+                const fileBuffer = await compress(fs.readFileSync(filePath));
+                const assetsId = `https://${packageName}/${file.split(path.sep).join("/")}`;
+                const size = fileBuffer.length;
+                assetsMatas[assetsId] = { offset, size };
+                assetsBinarys.push(fileBuffer);
+                offset += size;
+            }
+        }
+
+        // 打包清单文件
+        const manifestBuffer = await compress(Buffer.from(JSON.stringify(assetsMatas), "utf-8"));
+        const manifestSize = manifestBuffer.length;
+        if (manifestSize > 4294967295) {
+            throw new Error("Manifest size exceeds 4GB limit.");
+        }
+        assetsBinarys.push(manifestBuffer);
+
+        // 写入清单头
+        const manifestSizeFlag = 4;
+        const headerBuffer = Buffer.alloc(manifestSizeFlag);
+        headerBuffer.writeUInt32LE(manifestSize, 0);
+        assetsBinarys.push(headerBuffer);
+
+        fs.writeFileSync(path.join(process.cwd(), 'temp/ezi.assets.binary'), Buffer.concat(assetsBinarys));
+
+        console.log(green("✓ assets generated."));
     }
 
-    public build() {
-
+    public async build() {
+        await build(this.viteConfig);
+        await this.genAssets();
     }
 
     public async dev() {
@@ -145,13 +208,13 @@ export class Builder {
         process.on("exit", cleanup);
     }
 
-    public main() {
+    public async main() {
         switch (this.mode) {
             case 'debug':
-                this.dev();
+                await this.dev();
                 break;
             case 'release':
-                this.build();
+                await this.build();
                 break;
             default:
                 throw new Error(`Unsupported build mode: ${this.mode}`);
