@@ -153,8 +153,9 @@ export class Builder {
         const child = spawn(this.eziDevExePath, [
             '--configpath',
             eziConfigJsonPath,
+            '--cwd',
+            process.cwd()
         ], {
-            cwd: __dirname,
             stdio: ["ignore", "pipe", "pipe"],
             windowsHide: false
         });
