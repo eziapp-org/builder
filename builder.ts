@@ -218,7 +218,8 @@ export class Builder {
                 await this.build();
                 break;
             default:
-                throw new Error(`Unsupported build mode: ${this.mode}`);
+                console.error(red(`✗ Unsupported build mode: ${this.mode}`));
+                process.exit(1);
         }
     }
 }
