@@ -136,10 +136,13 @@ export class Builder {
         const server = await createServer();
         await server.listen();
 
-        const eziConfigJsonPath = path.join(this.genTempFilePath, "ezi.config.json");
-        fs.writeFileSync(eziConfigJsonPath, JSON.stringify(this.eziConfig, null, 4), { encoding: "utf-8" });
+        const devEziConfig = structuredClone(this.eziConfig);
+        devEziConfig.application.package += ".debug";
 
-        const appName = this.eziConfig?.application?.name || "EziApplication";
+        const eziConfigJsonPath = path.join(this.genTempFilePath, "ezi.config.json");
+        fs.writeFileSync(eziConfigJsonPath, JSON.stringify(devEziConfig, null, 4), { encoding: "utf-8" });
+
+        const appName = devEziConfig?.application?.name || "EziApplication";
         const child = spawn(this.eziDevExePath, [
             '--configpath',
             eziConfigJsonPath,
@@ -183,7 +186,7 @@ export class Builder {
             ``,
             ` ${green('➜')}  ${bold('devEntry')}: ${blue('http://localhost:' + bold(server.config.server.port.toString()))}`,
             ` ${green("➜")}  ${bold("EziApp")}:   ${bold(blue(appName))} ${green("running")} [pid:${bold("" + child.pid)}]`,
-            ` ${green("➜")}  ${bold("Package")}:  ${green(this.eziConfig?.application?.package ?? "com.ezi.app")}`,
+            ` ${green("➜")}  ${bold("Package")}:  ${green(devEziConfig?.application?.package ?? "com.ezi.app")}`,
             ` ${green("➜")}  ${bold("Started")}:  ${blue(new Date().toLocaleString())}`,
         ]);
 
