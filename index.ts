@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Builder } from './builder';
+import { Builder } from './src/builder';
 
 if (require.main === module) {
     const builder = new Builder({});

@@ -5,7 +5,7 @@ import {
     getCurrentPlatformName,
     getCurrentTimeString,
     getAllFiles
-} from "./utils/common";
+} from "./utils";
 import * as fs from "fs";
 import * as path from "path";
 import { build, createServer } from "vite";
@@ -15,7 +15,7 @@ type BuildMode = 'debug' | 'release'
 type Platform = 'windows' | 'linux' | 'macos'
 
 const packagers = {
-    windows: "./packagers/windows/main"
+    windows: "../packagers/windows/main"
 }
 
 export class Builder {
@@ -28,7 +28,7 @@ export class Builder {
     private mode: BuildMode;
     private platform: Platform;
 
-    private eziDevExePath: string = path.join(__dirname, "bin/eziapp-dev.exe");
+    private eziDevExePath: string = path.join(__dirname, "../bin/eziapp-dev.exe");
 
     constructor(config: {
         viteConfigPath?: string;
