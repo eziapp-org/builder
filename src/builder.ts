@@ -90,7 +90,7 @@ export class Builder {
 
         // 打包资源文件
         const assetsDir = path.join(process.cwd(), this.eziConfig.application.buildEntry || "dist");
-        console.log(`asset directory: ${assetsDir}`);
+        console.log(`asset directory: ${this.eziConfig.application.buildEntry || "dist"}`);
 
         const files = getAllFiles(assetsDir);
 
