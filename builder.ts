@@ -89,16 +89,6 @@ export class Builder {
         assetsBinarys.push(configBuffer);
         offset += configSize;
 
-        // 打包splash图片
-        const splashPath = this.eziConfig?.window?.splashscreen?.src;
-        if (splashPath) {
-            const splashBuffer = await compress(fs.readFileSync(path.join(process.cwd(), splashPath)));
-            const splashSize = splashBuffer.length;
-            assetsMatas["ezi.splashscreen-" + splashPath] = { offset, size: splashSize };
-            assetsBinarys.push(splashBuffer);
-            offset += splashSize;
-        }
-
         // 打包资源文件
         const assetsDir = path.join(process.cwd(), this.viteConfig?.build?.outDir || "dist");
         const files = getAllFiles(assetsDir);
