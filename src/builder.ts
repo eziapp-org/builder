@@ -44,7 +44,6 @@ export class Builder {
         this.eziConfigPath = config.eziConfigPath ?? "ezi.config.ts";
         this.outDir = config.outDir ?? path.join(process.cwd(), "dist");
         this.genTempFilePath = config.genTempFilePath || path.join(process.cwd(), "temp");
-        this.LoadConfig();
     }
     public async LoadConfig() {
         // vite config
@@ -90,7 +89,9 @@ export class Builder {
         offset += configSize;
 
         // 打包资源文件
-        const assetsDir = path.join(process.cwd(), this.viteConfig?.build?.outDir || "dist");
+        const assetsDir = path.join(process.cwd(), this.eziConfig.application.buildEntry || "dist");
+        console.log(`asset directory: ${assetsDir}`);
+
         const files = getAllFiles(assetsDir);
 
         for (const file of files) {
@@ -127,6 +128,9 @@ export class Builder {
     }
 
     public async build() {
+        if (!this.eziConfig.application.buildEntry) {
+            this.eziConfig.application.buildEntry = this.viteConfig?.build?.outDir || "dist";
+        }
         await build(this.viteConfig);
         await this.genAssets();
     }
@@ -138,6 +142,16 @@ export class Builder {
 
         const devEziConfig = structuredClone(this.eziConfig);
         devEziConfig.application.package += ".debug";
+
+        if (!devEziConfig.application.devEntry) {
+            const info = server.httpServer?.address();
+            if (info && typeof info === "object") {
+                const port = info.port;
+                devEziConfig.application.devEntry = `http://localhost:${port}/`;
+            } else {
+                throw new Error("Failed to get server address.");
+            }
+        }
 
         const eziConfigJsonPath = path.join(this.genTempFilePath, "ezi.config.json");
         fs.writeFileSync(eziConfigJsonPath, JSON.stringify(devEziConfig, null, 4), { encoding: "utf-8" });
@@ -184,7 +198,7 @@ export class Builder {
         printBoxedMessage([
             `${bold(green('VITE')) + green(' v' + viteVersion)} ready in ${bold((Date.now() - startTime).toString())} ms`,
             ``,
-            ` ${green('➜')}  ${bold('devEntry')}: ${blue('http://localhost:' + bold(server.config.server.port.toString()))}`,
+            ` ${green('➜')}  ${bold('devEntry')}: ${blue(bold(devEziConfig.application.devEntry))}`,
             ` ${green("➜")}  ${bold("EziApp")}:   ${bold(blue(appName))} ${green("running")} [pid:${bold("" + child.pid)}]`,
             ` ${green("➜")}  ${bold("Package")}:  ${green(devEziConfig?.application?.package ?? "com.ezi.app")}`,
             ` ${green("➜")}  ${bold("Started")}:  ${blue(new Date().toLocaleString())}`,
@@ -203,6 +217,7 @@ export class Builder {
     }
 
     public async main() {
+        await this.LoadConfig();
         switch (this.mode) {
             case 'debug':
                 await this.dev();
