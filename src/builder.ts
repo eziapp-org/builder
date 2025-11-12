@@ -67,6 +67,15 @@ export class Builder {
             }
         } catch (e) {
             console.log(yellow("! no ezi.config.ts found, using default config."));
+            eziConfig = {
+                application: {
+                    name: "EziApplication",
+                    package: "com.ezi.app",
+                },
+                window: {
+                    title: "Ezi Application"
+                }
+            };
         }
         this.eziConfig = eziConfig;
     }
