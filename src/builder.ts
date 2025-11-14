@@ -152,7 +152,7 @@ export class Builder {
 
             const icoBuffer = await pngToIco(resizedPngBuffer);
 
-            fs.writeFileSync(path.join(this.genTempFilePath, 'app_128x128.ico'), icoBuffer);
+            fs.writeFileSync(path.join(this.genTempFilePath, 'eziapp.ico'), icoBuffer);
             console.log(green("✓ icon generated."));
         } catch (err) {
             console.error('Error generating icon:', err);
