@@ -10,6 +10,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { build, createServer } from "vite";
 import { compress } from '@mongodb-js/zstd'
+import sharp from 'sharp';
+import pngToIco from 'png-to-ico';
 
 type BuildMode = 'debug' | 'release'
 type Platform = 'windows' | 'linux' | 'macos'
@@ -136,12 +138,35 @@ export class Builder {
         console.log(green("✓ assets generated."));
     }
 
+    public async genIcon() {
+        const iconPath = "public/" + this.eziConfig.application.icon;
+        if (!iconPath) {
+            return;
+        }
+
+        try {
+            const resizedPngBuffer = await sharp(iconPath)
+                .resize(256, 256, { fit: 'cover' })
+                .png()
+                .toBuffer();
+
+            const icoBuffer = await pngToIco(resizedPngBuffer);
+
+            fs.writeFileSync(path.join(this.genTempFilePath, 'app_128x128.ico'), icoBuffer);
+            console.log(green("✓ icon generated."));
+        } catch (err) {
+            console.error('Error generating icon:', err);
+            process.exit(1);
+        }
+    }
+
     public async build() {
         if (!this.eziConfig.application.buildEntry) {
             this.eziConfig.application.buildEntry = this.viteConfig?.build?.outDir || "dist";
         }
         await build(this.viteConfig);
         await this.genAssets();
+        await this.genIcon();
     }
 
     public async dev() {
