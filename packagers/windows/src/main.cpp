@@ -3,6 +3,8 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <iomanip>
+#include <filesystem>
 
 #pragma pack(push, 1)
 struct ICONDIR
@@ -57,6 +59,7 @@ namespace ezi::builder::packager
     {
     private:
         HANDLE hUpdate;
+        int updateCount = 0;
 
     public:
         ResourceUpdater(const std::string &exePath)
@@ -77,6 +80,7 @@ namespace ezi::builder::packager
     private:
         void updateResource(WORD resourceType, WORD resourceName, std::vector<char> &data)
         {
+            updateCount++;
             if (!UpdateResourceA(hUpdate, MAKEINTRESOURCEA(resourceType), MAKEINTRESOURCEA(resourceName), 1033, data.data(), data.size()))
                 utils::ShowErrorAndExit("UpdateResource failed.");
         }
@@ -84,6 +88,11 @@ namespace ezi::builder::packager
     public:
         void finalize()
         {
+            if (updateCount == 0)
+            {
+                std::cout << "No resources were updated." << std::endl;
+                return;
+            }
             if (hUpdate)
             {
                 if (!EndUpdateResourceA(hUpdate, FALSE))
@@ -95,6 +104,7 @@ namespace ezi::builder::packager
         }
         void updateAsset(std::string filePath)
         {
+            std::cout << "Updating asset..." << std::endl;
             std::ifstream file(filePath, std::ios::binary);
             if (!file)
                 utils::ShowErrorAndExit("Failed to open asset file.");
@@ -103,6 +113,7 @@ namespace ezi::builder::packager
         }
         void updateIcon(const std::string &iconPath)
         {
+            std::cout << "Updating icon..." << std::endl;
             std::ifstream file(iconPath, std::ios::binary);
             if (!file)
                 utils::ShowErrorAndExit("Failed to open icon file.");
@@ -159,6 +170,7 @@ namespace ezi::builder::packager
         }
         void updateVersionInfo(const VersionInfo info)
         {
+            std::cout << "Updating version info..." << std::endl;
             std::vector<BYTE> stringTableChildren;
             {
                 auto makeStringBlock = [](const std::wstring &key, const std::wstring &value) -> std::vector<BYTE>
@@ -330,18 +342,176 @@ namespace ezi::builder::packager
     };
 }
 
-int main()
+struct Option
 {
-    using ezi::builder::packager::ResourceUpdater;
+    std::string name;
+    std::string parameter;
+    std::string description;
+};
 
-    ResourceUpdater updater("ezi.exe");
-    updater.updateVersionInfo({.companyName = L"EziApp Org.",
-                               .fileDescription = L"Ezi Application",
-                               .fileVersion = L"0.0.0",
-                               .productName = L"EziApp",
-                               .productVersion = L"0.0.0",
-                               .fileVersionParts = {0, 0, 0, 0},
-                               .productVersionParts = {0, 0, 0, 0}});
+class AgrumentParser
+{
+private:
+    int argc;
+    char **argv;
+    std::vector<Option> options{
+        {"--help", "", "Show this help message"},
+        {"--version", "", "Show version information"},
+        {"--input", "<path>", "Specify the input executable path"},
+        {"--icon", "<path>", "Specify the path to the icon file (.ico)"},
+        {"--ezi-asset", "<path>", "Specify the path to the eziapp's asset file"},
+        {"--update-version", "true", "Update version information"},
+        {"--ver-companyName", "<name>", "Set the company name in version info"},
+        {"--ver-fileDescription", "<description>", "Set the file description in version info"},
+        {"--ver-fileVersion", "<version>", "Set the file version in version info"},
+        {"--ver-productName", "<name>", "Set the product name in version info"},
+        {"--ver-productVersion", "<version>", "Set the product version in version info"},
+        {"--ver-fileVersionParts", "<x.x.x.x>", "Set the file version parts in version info"},
+        {"--ver-productVersionParts", "<x.x.x.x>", "Set the product version parts in version info"},
+    };
+
+public:
+    AgrumentParser(int argc, char **argv) : argc(argc), argv(argv) {}
+
+public:
+    void printHelp()
+    {
+        printVersion();
+        std::cout << "Usage: packager [options]\nOptions:\n";
+        size_t maxLen = 0;
+        for (auto &opt : options)
+        {
+            std::string label = opt.parameter.empty() ? opt.name : (opt.name + " " + opt.parameter);
+            if (label.size() > maxLen)
+                maxLen = label.size();
+        }
+
+        for (auto &opt : options)
+        {
+            std::string label = opt.parameter.empty() ? opt.name : (opt.name + " " + opt.parameter);
+            std::cout << "  " << std::left << std::setw(maxLen + 2) << label << opt.description << "\n";
+        }
+    }
+
+    void printVersion()
+    {
+        std::cout << "EziApp Builder Packager Version 0.0.0\n";
+    }
+
+    std::string getOptionValue(const std::string &optionName)
+    {
+        for (int i = 1; i < argc; ++i)
+        {
+            if (std::string(argv[i]) == optionName && i + 1 < argc)
+            {
+                return std::string(argv[i + 1]);
+            }
+        }
+        return "";
+    }
+};
+
+int main(int argc, char *argv[])
+{
+    AgrumentParser parser(argc, argv);
+
+    // 无参数
+    if (argc < 2)
+    {
+        parser.printHelp();
+        return 0;
+    }
+
+    // 帮助信息
+    if (std::string(argv[1]) == "--help")
+    {
+        parser.printHelp();
+        return 0;
+    }
+
+    // 版本信息
+    if (std::string(argv[1]) == "--version")
+    {
+        parser.printVersion();
+        return 0;
+    }
+
+    // 参数小于4个
+    if (argc < 4)
+    {
+        std::cerr << "Insufficient arguments provided. Use --help for usage information." << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // 输入程序文件
+    std::string inputPath = parser.getOptionValue("--input");
+    if (inputPath.empty())
+    {
+        std::cerr << "Input executable path is required." << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    if (std::filesystem::exists(inputPath) == false)
+    {
+        std::cerr << "Input executable file does not exist." << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    ezi::builder::packager::ResourceUpdater updater(inputPath);
+
+    // 修改icon
+    std::string iconPath = parser.getOptionValue("--icon");
+    if (!iconPath.empty())
+    {
+        updater.updateIcon(iconPath);
+    }
+
+    // 修改ezi asset
+    std::string assetPath = parser.getOptionValue("--ezi-asset");
+    if (!assetPath.empty())
+    {
+        updater.updateAsset(assetPath);
+    }
+
+    // 修改版本信息
+
+    auto updateVersionFlag = parser.getOptionValue("--update-version");
+    if (updateVersionFlag == "true")
+    {
+        auto parseVersionParts = [](const std::string &versionStr, WORD parts[4])
+        {
+            std::istringstream iss(versionStr);
+            std::string token;
+            int index = 0;
+            while (std::getline(iss, token, '.') && index < 4)
+            {
+                parts[index++] = static_cast<WORD>(std::stoi(token));
+            }
+            while (index < 4)
+            {
+                parts[index++] = 0;
+            }
+        };
+
+        auto gbkToUtf16 = [](const std::string &gbk_str) -> std::wstring
+        {
+            int len = MultiByteToWideChar(CP_ACP, 0, gbk_str.c_str(), -1, nullptr, 0);
+            std::wstring utf16_str(len, L'\0');
+            MultiByteToWideChar(CP_ACP, 0, gbk_str.c_str(), -1, &utf16_str[0], len);
+            return utf16_str;
+        };
+
+        VersionInfo verInfo;
+        verInfo.companyName = gbkToUtf16(parser.getOptionValue("--ver-companyName"));
+        verInfo.fileDescription = gbkToUtf16(parser.getOptionValue("--ver-fileDescription"));
+        verInfo.fileVersion = gbkToUtf16(parser.getOptionValue("--ver-fileVersion"));
+        verInfo.productName = gbkToUtf16(parser.getOptionValue("--ver-productName"));
+        verInfo.productVersion = gbkToUtf16(parser.getOptionValue("--ver-productVersion"));
+        parseVersionParts(parser.getOptionValue("--ver-fileVersionParts"), verInfo.fileVersionParts);
+        parseVersionParts(parser.getOptionValue("--ver-productVersionParts"), verInfo.productVersionParts);
+        updater.updateVersionInfo(verInfo);
+    }
+
     updater.finalize();
     return 0;
 }
