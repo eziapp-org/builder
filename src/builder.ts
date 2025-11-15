@@ -16,7 +16,7 @@ import pngToIco from 'png-to-ico';
 type BuildMode = 'debug' | 'release'
 type Platform = 'windows' | 'linux' | 'macos'
 
-const packagers = {
+const packagers: Partial<Record<Platform, string>> = {
     windows: "../packagers/windows/main"
 }
 
@@ -42,16 +42,16 @@ export class Builder {
     }) {
         this.mode = config.mode || (getArg("--mode") as BuildMode) || 'debug';
         this.platform = config.platform || (getArg("--platform") as Platform) || getCurrentPlatformName();
-        this.viteConfigPath = config.viteConfigPath ?? "vite.config.js";
-        this.eziConfigPath = config.eziConfigPath ?? "ezi.config.ts";
-        this.outDir = config.outDir ?? path.join(process.cwd(), "dist");
-        this.genTempFilePath = config.genTempFilePath || path.join(process.cwd(), "temp");
+        this.viteConfigPath = path.join(process.cwd(), config.viteConfigPath ?? "vite.config.js");
+        this.eziConfigPath = path.join(process.cwd(), config.eziConfigPath ?? "ezi.config.ts");
+        this.outDir = path.join(process.cwd(), config.outDir ?? "build");
+        this.genTempFilePath = path.join(process.cwd(), config.genTempFilePath ?? "temp");
     }
     public async LoadConfig() {
         // vite config
         let viteConfig = {} as any;
         try {
-            viteConfig = await import(path.join(process.cwd(), this.viteConfigPath));
+            viteConfig = await import(this.viteConfigPath);
             if (viteConfig.default) {
                 viteConfig = viteConfig.default;
             }
@@ -63,7 +63,7 @@ export class Builder {
         // ezi config
         let eziConfig = {} as any;
         try {
-            eziConfig = await import(path.join(process.cwd(), this.eziConfigPath));
+            eziConfig = await import(this.eziConfigPath);
             if (eziConfig.default) {
                 eziConfig = eziConfig.default;
             }
@@ -133,7 +133,7 @@ export class Builder {
         headerBuffer.writeUInt32LE(manifestSize, 0);
         assetsBinarys.push(headerBuffer);
 
-        fs.writeFileSync(path.join(process.cwd(), 'temp/ezi.assets.binary'), Buffer.concat(assetsBinarys));
+        fs.writeFileSync(path.join(this.genTempFilePath, 'ezi.assets.binary'), Buffer.concat(assetsBinarys));
 
         console.log(green("✓ assets generated."));
     }
@@ -161,12 +161,27 @@ export class Builder {
     }
 
     public async build() {
+        const packagerPath = packagers[this.platform];
+        if (!packagerPath) {
+            console.error(red(`✗ Unsupported platform: ${this.platform}`));
+            process.exit(1);
+        }
+
         if (!this.eziConfig.application.buildEntry) {
             this.eziConfig.application.buildEntry = this.viteConfig?.build?.outDir || "dist";
         }
         await build(this.viteConfig);
         await this.genAssets();
         await this.genIcon();
+        const packagerModule = await import(path.join(__dirname, packagerPath));
+        const PackagerClass = packagerModule.default;
+        const packager = new PackagerClass({
+            eziConfig: this.eziConfig,
+            outDir: this.outDir,
+            tempDir: this.genTempFilePath,
+        });
+        await packager.package();
+        console.log(green("✓ build completed."));
     }
 
     public async dev() {

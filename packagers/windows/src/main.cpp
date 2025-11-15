@@ -407,9 +407,23 @@ public:
     {
         for (int i = 1; i < argc; ++i)
         {
-            if (std::string(argv[i]) == optionName && i + 1 < argc)
+            if (std::string(argv[i]) == optionName)
             {
-                return std::string(argv[i + 1]);
+                std::string result;
+                for (int j = i + 1; j < argc; ++j)
+                {
+                    std::string arg = argv[j];
+                    if (arg.rfind("--", 0) == 0)
+                    {
+                        break;
+                    }
+                    if (!result.empty())
+                    {
+                        result += " ";
+                    }
+                    result += arg;
+                }
+                return result;
             }
         }
         return "";

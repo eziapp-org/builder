@@ -22,7 +22,8 @@
         "noEmit": false
     },
     "include": [
-        "index.ts"
+        "index.ts",
+        "packagers/**/main.ts",
     ], // 只编译入口文件
     "exclude": [
         "node_modules",
