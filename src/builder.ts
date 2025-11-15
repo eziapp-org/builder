@@ -272,6 +272,9 @@ export class Builder {
     }
 
     public async main() {
+        console.log(yellow("! EziApp 正在快速迭代中，当前 API 尚未稳定，请不要用于生产环境。"));
+        console.log(yellow("! EziApp is rapidly evolving, the API is not yet stable, please do not use it in production."));
+
         await this.LoadConfig();
         switch (this.mode) {
             case 'debug':
