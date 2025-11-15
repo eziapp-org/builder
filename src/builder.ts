@@ -133,6 +133,9 @@ export class Builder {
         headerBuffer.writeUInt32LE(manifestSize, 0);
         assetsBinarys.push(headerBuffer);
 
+        if (!fs.existsSync(this.genTempFilePath)) {
+            fs.mkdirSync(this.genTempFilePath, { recursive: true });
+        }
         fs.writeFileSync(path.join(this.genTempFilePath, 'ezi.assets.binary'), Buffer.concat(assetsBinarys));
 
         console.log(green("✓ assets generated."));
@@ -203,6 +206,9 @@ export class Builder {
         }
 
         const eziConfigJsonPath = path.join(this.genTempFilePath, "ezi.config.json");
+        if (!fs.existsSync(this.genTempFilePath)) {
+            fs.mkdirSync(this.genTempFilePath, { recursive: true });
+        }
         fs.writeFileSync(eziConfigJsonPath, JSON.stringify(devEziConfig, null, 4), { encoding: "utf-8" });
 
         const appName = devEziConfig?.application?.name || "EziApplication";

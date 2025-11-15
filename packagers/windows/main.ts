@@ -25,6 +25,9 @@ class windowsPackager {
 
         // 复制到输出目录
         const outAppPath = path.join(this.outDir, `${appName}_winx64.exe`);
+        if (!fs.existsSync(this.outDir)) {
+            fs.mkdirSync(this.outDir, { recursive: true });
+        }
         fs.copyFileSync(this.eziappBinPath, outAppPath);
 
         // 输入程序参数
