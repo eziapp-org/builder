@@ -210,11 +210,16 @@ namespace ezi::builder::packager
                     stringTableChildren.insert(stringTableChildren.end(), b.begin(), b.end());
                 };
 
-                appendString(L"CompanyName", info.companyName);
-                appendString(L"FileDescription", info.fileDescription);
-                appendString(L"FileVersion", info.fileVersion);
-                appendString(L"ProductName", info.productName);
-                appendString(L"ProductVersion", info.productVersion);
+                if (!info.companyName.empty())
+                    appendString(L"CompanyName", info.companyName);
+                if (!info.fileDescription.empty())
+                    appendString(L"FileDescription", info.fileDescription);
+                if (!info.fileVersion.empty())
+                    appendString(L"FileVersion", info.fileVersion);
+                if (!info.productName.empty())
+                    appendString(L"ProductName", info.productName);
+                if (!info.productVersion.empty())
+                    appendString(L"ProductVersion", info.productVersion);
             }
 
             std::vector<BYTE> stringTable;
@@ -496,7 +501,7 @@ int main(int argc, char *argv[])
         auto gbkToUtf16 = [](const std::string &gbk_str) -> std::wstring
         {
             int len = MultiByteToWideChar(CP_ACP, 0, gbk_str.c_str(), -1, nullptr, 0);
-            std::wstring utf16_str(len, L'\0');
+            std::wstring utf16_str(len - 1, L'\0');
             MultiByteToWideChar(CP_ACP, 0, gbk_str.c_str(), -1, &utf16_str[0], len);
             return utf16_str;
         };
