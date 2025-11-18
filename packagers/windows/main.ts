@@ -3,8 +3,8 @@ import * as path from "path";
 import { execSync } from "child_process";
 
 class windowsPackager {
-    private packagerBinPath = path.join(__dirname, "../../bin/eziapp-packager-windows.exe");
-    private eziappBinPath = path.join(__dirname, "../../bin/eziapp-release.exe");
+    private packagerBinPath = path.join(__dirname, "../../bin/eziapp-packager-winx64.exe");
+    private eziappBinPath = path.join(__dirname, "../../bin/eziapp-npm-release-winx64.exe");
     private argv: string[] = [];
     private eziConfig: any;
     private outDir: string;

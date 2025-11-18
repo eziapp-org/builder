@@ -31,7 +31,7 @@ export class Builder {
     private mode: BuildMode;
     private platform: Platform;
 
-    private eziDevExePath: string = path.join(__dirname, "../bin/eziapp-dev.exe");
+    private eziDevExePath: string = path.join(__dirname, "../bin/eziapp-npm-dev-winx64.exe");
 
     constructor(config: {
         viteConfigPath?: string;
