@@ -1,5 +1,4 @@
 import { spawn } from "child_process";
-import { blue, bold, green, red, yellow } from "./colorf";
 import {
     getArg,
     getCurrentPlatformName,
@@ -12,6 +11,8 @@ import { build, createServer } from "vite";
 import { compress } from '@mongodb-js/zstd'
 import sharp from 'sharp';
 import pngToIco from 'png-to-ico';
+import chalk from "chalk";
+const { red, green, yellow, blue, bold } = chalk;
 
 type BuildMode = 'debug' | 'release'
 type Platform = 'windows' | 'linux' | 'macos'
@@ -56,7 +57,7 @@ export class Builder {
                 viteConfig = viteConfig.default;
             }
         } catch (e) {
-            console.log(yellow("! no vite.config.ts found, using default config."));
+            console.log(yellow("! no vite.config.js found, using default config."));
         }
         this.viteConfig = viteConfig;
 
