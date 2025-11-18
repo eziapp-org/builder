@@ -185,7 +185,6 @@ export class Builder {
             tempDir: this.genTempFilePath,
         });
         await packager.package();
-        console.log(green("✓ build completed."));
     }
 
     public async dev() {
