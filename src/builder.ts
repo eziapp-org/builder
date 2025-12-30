@@ -21,6 +21,10 @@ const packagers: Partial<Record<Platform, string>> = {
     windows: "../packagers/windows/main"
 }
 
+const eziDevExePaths: Partial<Record<Platform, string>> = {
+    windows: path.join(__dirname, "../bin/eziapp-npm-dev-winx64.exe")
+}
+
 export class Builder {
     private viteConfigPath: string;
     private eziConfigPath: string;
@@ -30,8 +34,6 @@ export class Builder {
     private eziConfig: any;
     private mode: BuildMode;
     private platform: Platform;
-
-    private eziDevExePath: string = path.join(__dirname, "../bin/eziapp-npm-dev-winx64.exe");
 
     constructor(config: {
         viteConfigPath?: string;
@@ -188,6 +190,12 @@ export class Builder {
     }
 
     public async dev() {
+        const devExePath = eziDevExePaths[this.platform];
+        if (!devExePath) {
+            console.error(red(`✗ Unsupported platform: ${this.platform}`));
+            process.exit(1);
+        }
+
         const startTime = Date.now();
         const server = await createServer();
         await server.listen();
@@ -212,7 +220,7 @@ export class Builder {
         fs.writeFileSync(eziConfigJsonPath, JSON.stringify(devEziConfig, null, 4), { encoding: "utf-8" });
 
         const appName = devEziConfig?.application?.name || "EziApplication";
-        const child = spawn(this.eziDevExePath, [
+        const child = spawn(devExePath, [
             '--configpath',
             eziConfigJsonPath,
             '--cwd',
