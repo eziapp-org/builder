@@ -145,10 +145,10 @@ export class Builder {
     }
 
     public async genIcon() {
-        const iconPath = "public/" + this.eziConfig.application.icon;
-        if (!iconPath) {
+        if (!(this.eziConfig.application.icon)) {
             return;
         }
+        const iconPath = path.join("public", this.eziConfig.application.icon);
 
         try {
             const resizedPngBuffer = await sharp(iconPath)
