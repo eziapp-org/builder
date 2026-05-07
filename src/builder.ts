@@ -27,7 +27,8 @@ const eziDevExePaths: Partial<Record<Platform, string>> = {
 }
 
 export class Builder {
-    private viteConfigPath: string;
+    private viteTsConfigPath: string;
+    private viteJsConfigPath: string;
     private eziConfigPath: string;
     private genTempFilePath: string;
     private outDir: string;
@@ -37,7 +38,8 @@ export class Builder {
     private platform: Platform;
 
     constructor(config: {
-        viteConfigPath?: string;
+        viteTsConfigPath?: string;
+        viteJsConfigPath?: string;
         eziConfigPath?: string;
         genTempFilePath?: string;
         outDir?: string;
@@ -46,27 +48,31 @@ export class Builder {
     }) {
         this.mode = config.mode || (getArg("--mode") as BuildMode) || 'debug';
         this.platform = config.platform || (getArg("--platform") as Platform) || getCurrentPlatformName();
-        this.viteConfigPath = path.join(process.cwd(), config.viteConfigPath ?? "vite.config.ts");
+        this.viteTsConfigPath = path.join(process.cwd(), config.viteTsConfigPath ?? "vite.config.ts");
+        this.viteJsConfigPath = path.join(process.cwd(), config.viteJsConfigPath ?? "vite.config.js");
         this.eziConfigPath = path.join(process.cwd(), config.eziConfigPath ?? "ezi.config.ts");
         this.outDir = path.join(process.cwd(), config.outDir ?? "build");
         this.genTempFilePath = path.join(process.cwd(), config.genTempFilePath ?? "node_modules/.eziapp");
     }
 
-    public async LoadConfig() {
+    public async loadConfig() {
         // vite config
-        if(fs.existsSync(this.viteConfigPath)) {
-            const mod = await import(this.viteConfigPath);
+        if (fs.existsSync(this.viteTsConfigPath)) {
+            const mod = await import(this.viteTsConfigPath);
             this.viteConfig = mod.default || mod;
-        }else{
-            console.log(yellow(`! no ${this.viteConfigPath} found, using default config.`));
+        } else if (fs.existsSync(this.viteJsConfigPath)) {
+            const mod = await import(this.viteJsConfigPath);
+            this.viteConfig = mod.default || mod;
+        } else {
+            console.log(yellow(`! no ${path.basename(this.viteTsConfigPath)} found, using default config.`));
         }
 
         // ezi config
         if (fs.existsSync(this.eziConfigPath)) {
             const mod = await import(this.eziConfigPath);
             this.eziConfig = mod.default || mod;
-        }else{
-            console.log(yellow(`! no ${this.eziConfigPath} found, using default config.`));
+        } else {
+            console.log(yellow(`! no ${path.basename(this.eziConfigPath)} found, using default config.`));
             this.eziConfig = {
                 application: {
                     name: "EziApplication",
@@ -172,7 +178,7 @@ export class Builder {
         if (!this.eziConfig.application.buildEntry) {
             this.eziConfig.application.buildEntry = this.viteConfig?.build?.outDir || "dist";
         }
-        await build({ configFile: this.viteConfigPath });
+        await build();
         await this.genAssets();
         await this.genIcon();
         const packagerModule = await import(path.join(__dirname, packagerPath));
@@ -279,7 +285,7 @@ export class Builder {
         console.log(yellow("! EziApp 正在快速迭代中，当前 API 尚未稳定，请不要用于生产环境。"));
         console.log(yellow("! EziApp is rapidly evolving, the API is not yet stable, please do not use it in production."));
 
-        await this.LoadConfig();
+        await this.loadConfig();
         switch (this.mode) {
             case 'debug':
                 await this.dev();
