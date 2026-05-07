@@ -62,7 +62,7 @@ export class Builder {
         }
 
         // ezi config
-        if (!fs.existsSync(this.eziConfigPath)) {
+        if (fs.existsSync(this.eziConfigPath)) {
             const mod = await import(this.eziConfigPath);
             this.eziConfig = mod.default || mod;
         }else{
