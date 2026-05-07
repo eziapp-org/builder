@@ -43,7 +43,7 @@ export class Builder {
             package: "com.ezi.app",
         },
         window: {
-            title: "Ezi Application"
+            title: "EziApplication"
         }
     };
 
