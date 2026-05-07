@@ -236,9 +236,9 @@ export class Builder {
             process.stdout.write(getCurrentTimeString() + bold(blue(` [${appName}] `)) + data);
         });
 
-        const srcDir = path.join(process.cwd(), this.viteConfig?.root || "");
+        const srcDir = path.join(process.cwd(), this.viteConfig?.root || "").replaceAll("\\", "/");
         child.stderr?.on("data", (data) => {
-            const errorMsg = data.toString().replace("LOCATION_ORIGIN", srcDir.replaceAll("\\", "/"));
+            const errorMsg = data.toString().replaceAll("LOCATION_ORIGIN", srcDir);
             process.stderr.write(red(errorMsg));
         });
 
