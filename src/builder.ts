@@ -53,6 +53,12 @@ export class Builder {
         this.eziConfigPath = path.join(process.cwd(), config.eziConfigPath ?? "ezi.config.ts");
         this.outDir = path.join(process.cwd(), config.outDir ?? "build");
         this.genTempFilePath = path.join(process.cwd(), config.genTempFilePath ?? "node_modules/.eziapp");
+
+        // 确保生成临时文件的目录存在
+        // 用于生成打包资源文件和调试时的配置文件
+        if (!fs.existsSync(this.genTempFilePath)) {
+            fs.mkdirSync(this.genTempFilePath, { recursive: true });
+        }
     }
 
     public async loadConfig() {
@@ -169,11 +175,6 @@ export class Builder {
             process.exit(1);
         }
 
-        // 确保生成临时文件的目录存在
-        if (!fs.existsSync(this.genTempFilePath)) {
-            fs.mkdirSync(this.genTempFilePath, { recursive: true });
-        }
-
         // 获取输出目录
         if (!this.eziConfig.application.buildEntry) {
             this.eziConfig.application.buildEntry = this.viteConfig?.build?.outDir || "dist";
@@ -216,9 +217,6 @@ export class Builder {
         }
 
         const eziConfigJsonPath = path.join(this.genTempFilePath, "ezi.config.json");
-        if (!fs.existsSync(this.genTempFilePath)) {
-            fs.mkdirSync(this.genTempFilePath, { recursive: true });
-        }
         fs.writeFileSync(eziConfigJsonPath, JSON.stringify(devEziConfig, null, 4), { encoding: "utf-8" });
 
         const appName = devEziConfig?.application?.name || "EziApplication";
