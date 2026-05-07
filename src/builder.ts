@@ -39,10 +39,10 @@ export class Builder {
     constructor(config: {
         viteConfigPath?: string;
         eziConfigPath?: string;
+        genTempFilePath?: string;
         outDir?: string;
         mode?: BuildMode;
         platform?: Platform;
-        genTempFilePath?: string;
     }) {
         this.mode = config.mode || (getArg("--mode") as BuildMode) || 'debug';
         this.platform = config.platform || (getArg("--platform") as Platform) || getCurrentPlatformName();
@@ -129,10 +129,6 @@ export class Builder {
         const headerBuffer = Buffer.alloc(manifestSizeFlag);
         headerBuffer.writeUInt32LE(manifestSize, 0);
         assetsBinarys.push(headerBuffer);
-
-        if (!fs.existsSync(this.genTempFilePath)) {
-            fs.mkdirSync(this.genTempFilePath, { recursive: true });
-        }
         fs.writeFileSync(path.join(this.genTempFilePath, 'ezi.assets.binary'), Buffer.concat(assetsBinarys));
 
         console.log(green("✓ assets generated."));
@@ -167,6 +163,12 @@ export class Builder {
             process.exit(1);
         }
 
+        // 确保生成临时文件的目录存在
+        if (!fs.existsSync(this.genTempFilePath)) {
+            fs.mkdirSync(this.genTempFilePath, { recursive: true });
+        }
+
+        // 获取输出目录
         if (!this.eziConfig.application.buildEntry) {
             this.eziConfig.application.buildEntry = this.viteConfig?.build?.outDir || "dist";
         }
