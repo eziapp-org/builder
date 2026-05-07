@@ -37,6 +37,16 @@ export class Builder {
     private mode: BuildMode;
     private platform: Platform;
 
+    private defaultEziConfig = {
+        application: {
+            name: "EziApplication",
+            package: "com.ezi.app",
+        },
+        window: {
+            title: "Ezi Application"
+        }
+    };
+
     constructor(config: {
         viteTsConfigPath?: string;
         viteJsConfigPath?: string;
@@ -79,15 +89,7 @@ export class Builder {
             this.eziConfig = mod.default || mod;
         } else {
             console.log(yellow(`! no ${path.basename(this.eziConfigPath)} found, using default config.`));
-            this.eziConfig = {
-                application: {
-                    name: "EziApplication",
-                    package: "com.ezi.app",
-                },
-                window: {
-                    title: "Ezi Application"
-                }
-            };
+            this.eziConfig = this.defaultEziConfig;
         }
     }
 
@@ -118,7 +120,7 @@ export class Builder {
             const filePath = path.join(assetsDir, file);
             const stat = fs.statSync(filePath);
             if (stat.isFile()) {
-                const packageName = this.eziConfig?.application?.package || "com.ezi.app";
+                const packageName = this.eziConfig?.application?.package || this.defaultEziConfig.application.package;
                 const fileBuffer = await compress(fs.readFileSync(filePath));
                 const assetsId = `https://${packageName}/${file.split(path.sep).join("/")}`;
                 const size = fileBuffer.length;
@@ -219,7 +221,7 @@ export class Builder {
         const eziConfigJsonPath = path.join(this.genTempFilePath, "ezi.config.json");
         fs.writeFileSync(eziConfigJsonPath, JSON.stringify(devEziConfig, null, 4), { encoding: "utf-8" });
 
-        const appName = devEziConfig?.application?.name || "EziApplication";
+        const appName = devEziConfig?.application?.name || this.defaultEziConfig.application.name;
         const child = spawn(devExePath, [
             '--configpath',
             eziConfigJsonPath,
