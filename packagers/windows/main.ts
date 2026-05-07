@@ -35,7 +35,17 @@ class windowsPackager {
         if (!fs.existsSync(this.outDir)) {
             fs.mkdirSync(this.outDir, { recursive: true });
         }
-        fs.copyFileSync(this.eziappBinPath, outAppPath);
+
+        try {
+            fs.copyFileSync(this.eziappBinPath, outAppPath);
+        } catch (error) {
+            // 如果是因为占用导致的失败，提示用户关闭正在运行的应用
+            if ((error as any).code === 'EBUSY') {
+                console.error(chalk.red(`✗ 应用 ${appName} 正忙碌中，请关闭正在运行的应用 ${appName} 后重试。`));
+                process.exit(1);
+            }
+            throw error;
+        }
 
         // 输入程序参数
         this.argv.push(...['--input', outAppPath]);
