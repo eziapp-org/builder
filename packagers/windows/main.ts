@@ -27,7 +27,7 @@ class windowsPackager {
         this.tempDir = tempDir;
     }
     public async package() {
-        console.log("packaging for Windows...");
+        console.log(chalk.green("✓ packaging for windows..."));
         const appName = this.eziConfig?.application?.name || "EziApp";
 
         // 复制到输出目录
@@ -81,7 +81,7 @@ class windowsPackager {
             // 开始打包
             const packagerCmd = `"${this.packagerBinPath}" --update-version true ${this.argv.join(' ')}`;
             execSync(packagerCmd, { stdio: 'inherit' });
-            console.log(chalk.green("✓ Packaging completed:\n" + outAppPath));
+            console.log(chalk.green("✓ packaging completed:\n" + outAppPath));
         } catch (error) {
             console.error(error);
             fs.unlinkSync(outAppPath);

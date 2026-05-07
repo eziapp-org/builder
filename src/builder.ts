@@ -112,7 +112,7 @@ export class Builder {
 
         // 打包资源文件
         const assetsDir = path.join(process.cwd(), this.eziConfig.application.buildEntry || "dist");
-        console.log(`asset directory: ${this.eziConfig.application.buildEntry || "dist"}`);
+        console.log(green(`✓ frontend assets located at: ${this.eziConfig.application.buildEntry}`));
 
         const files = getAllFiles(assetsDir);
 
