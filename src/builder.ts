@@ -170,11 +170,11 @@ export class Builder {
         if (!this.eziConfig.application.buildEntry) {
             this.eziConfig.application.buildEntry = this.viteConfig?.build?.outDir || "dist";
         }
-        await build(this.viteConfig);
+        await build({ configFile: this.viteConfigPath });
         await this.genAssets();
         await this.genIcon();
         const packagerModule = await import(path.join(__dirname, packagerPath));
-        const PackagerClass = packagerModule.default;
+        const PackagerClass = packagerModule.default || packagerModule;
         const packager = new PackagerClass({
             eziConfig: this.eziConfig,
             outDir: this.outDir,
