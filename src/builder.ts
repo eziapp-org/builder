@@ -12,6 +12,7 @@ import { compress } from '@mongodb-js/zstd'
 import sharp from 'sharp';
 import pngToIco from 'png-to-ico';
 import chalk from "chalk";
+
 const { red, green, yellow, blue, bold } = chalk;
 
 type BuildMode = 'debug' | 'release'
@@ -45,34 +46,28 @@ export class Builder {
     }) {
         this.mode = config.mode || (getArg("--mode") as BuildMode) || 'debug';
         this.platform = config.platform || (getArg("--platform") as Platform) || getCurrentPlatformName();
-        this.viteConfigPath = path.join(process.cwd(), config.viteConfigPath ?? "vite.config.js");
+        this.viteConfigPath = path.join(process.cwd(), config.viteConfigPath ?? "vite.config.ts");
         this.eziConfigPath = path.join(process.cwd(), config.eziConfigPath ?? "ezi.config.ts");
         this.outDir = path.join(process.cwd(), config.outDir ?? "build");
-        this.genTempFilePath = path.join(process.cwd(), config.genTempFilePath ?? "temp");
+        this.genTempFilePath = path.join(process.cwd(), config.genTempFilePath ?? "node_modules/.eziapp");
     }
+
     public async LoadConfig() {
         // vite config
-        let viteConfig = {} as any;
-        try {
-            viteConfig = await import(this.viteConfigPath);
-            if (viteConfig.default) {
-                viteConfig = viteConfig.default;
-            }
-        } catch (e) {
-            console.log(yellow("! no vite.config.js found, using default config."));
+        if(fs.existsSync(this.viteConfigPath)) {
+            const mod = await import(this.viteConfigPath);
+            this.viteConfig = mod.default || mod;
+        }else{
+            console.log(yellow(`! no ${this.viteConfigPath} found, using default config.`));
         }
-        this.viteConfig = viteConfig;
 
         // ezi config
-        let eziConfig = {} as any;
-        try {
-            eziConfig = await import(this.eziConfigPath);
-            if (eziConfig.default) {
-                eziConfig = eziConfig.default;
-            }
-        } catch (e) {
-            console.log(yellow("! no ezi.config.ts found, using default config."));
-            eziConfig = {
+        if (!fs.existsSync(this.eziConfigPath)) {
+            const mod = await import(this.eziConfigPath);
+            this.eziConfig = mod.default || mod;
+        }else{
+            console.log(yellow(`! no ${this.eziConfigPath} found, using default config.`));
+            this.eziConfig = {
                 application: {
                     name: "EziApplication",
                     package: "com.ezi.app",
@@ -82,7 +77,6 @@ export class Builder {
                 }
             };
         }
-        this.eziConfig = eziConfig;
     }
 
     public async genAssets() {
